@@ -1,13 +1,58 @@
-Version: 1.0
+# Load necessary libraries
+library(dplyr)
 
-RestoreWorkspace: Default
-SaveWorkspace: Default
-AlwaysSaveHistory: Default
+# URL for downloading data
+zipUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
 
-EnableCodeIndexing: Yes
-UseSpacesForTab: Yes
-NumSpacesForTab: 2
-Encoding: UTF-8
+# Check if data directory exists, if not, download and unzip
+dataPath <- "UCI HAR Dataset"
+if (!file.exists(dataPath)) {
+  zipFile <- "UCI HAR Dataset.zip"
+  if (!file.exists(zipFile)) {
+    download.file(zipUrl, zipFile, mode = "wb")
+  }
+  unzip(zipFile)
+}
 
-RnwWeave: Sweave
-LaTeX: pdfLaTeX
+# Read data
+read_data <- function(folder, file_name) {
+  read.table(file.path(dataPath, folder, file_name))
+}
+
+trainingSubjects <- read_data("train", "subject_train.txt")
+trainingValues <- read_data("train", "X_train.txt")
+trainingActivity <- read_data("train", "y_train.txt")
+
+testSubjects <- read_data("test", "subject_test.txt")
+testValues <- read_data("test", "X_test.txt")
+testActivity <- read_data("test", "y_test.txt")
+
+features <- read_data("", "features.txt", as.is = TRUE)
+activities <- read_data("", "activity_labels.txt", col.names = c("activityId", "activityLabel"))
+
+# Merge datasets
+humanActivity <- bind_rows(
+  bind_cols(trainingSubjects, trainingValues, trainingActivity),
+  bind_cols(testSubjects, testValues, testActivity)
+)
+
+# Set column names
+colnames(humanActivity) <- c("subject", as.character(features[, 2]), "activity")
+
+# Extract mean and standard deviation measurements
+columnsToKeep <- grepl("subject|activity|mean\\(|std\\(", colnames(humanActivity))
+humanActivity <- humanActivity[, columnsToKeep]
+
+# Use descriptive activity names
+humanActivity$activity <- factor(humanActivity$activity, levels = activities$activityId, labels = activities$activityLabel)
+
+# Label the data set with descriptive variable names
+colnames(humanActivity) <- make.names(colnames(humanActivity))
+
+# Create tidy data set
+humanActivityMeans <- humanActivity %>%
+  group_by(subject, activity) %>%
+  summarise(across(everything(), mean))
+
+# Write tidy data set to file
+write.table(humanActivityMeans, "tidy_data.txt", row.names = FALSE, quote = FALSE)
