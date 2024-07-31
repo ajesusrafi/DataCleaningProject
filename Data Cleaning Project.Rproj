@@ -56,3 +56,5 @@ humanActivityMeans <- humanActivity %>%
 
 # Write tidy data set to file
 write.table(humanActivityMeans, "tidy_data.txt", row.names = FALSE, quote = FALSE)
+
+
