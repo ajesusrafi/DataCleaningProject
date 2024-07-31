@@ -40,3 +40,7 @@ Tidy Data Creation:
 Data Output:
 
     It writes the resulting tidy dataset to a file named "tidy_data.txt" in the working directory using write.table
+
+Running File: 
+
+    Open R or RStudio and run the run_analysis.R script
